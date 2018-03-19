@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Classifier-webpack-component</title>
+    <link rel="stylesheet" media="all" href="css/some.css">
+</head>
+
+<body>
+
+    <label for="" style="display:block;">CPV</label>
+    <input type="text" id="cpv" name="Model[cpv]" value="03100000-2,03116000-7,98500000-8,65410000-0" style="width:95%; font-size:14px; padding:5px;"
+    />
+    
+    <button onclick="initModal('cpv'); return false;">Select classes</button>
+    <div id="cpvControl">cpv-control</div>
+
+    <hr>
+    
+    <label for="" style="display:block;">MAIN</label><button onclick="initModal('main'); return false;">Select classes</button>
+    <input type="text" id="main" name="Model[main]" value="1" style="width:95%; font-size:14px; padding:5px;" />
+    <div id="mainControl">main-control</div>
+
+    <hr>
+    
+    <label for="" style="display:block;">DKPP</label><button onclick="initModal('dkpp'); return false;">Select classes</button>
+    <input type="text" id="dkpp" name="Model[dkpp]" value="11.04" style="width:95%; font-size:14px; padding:5px;" />
+    <div id="dkppControl">dkpp-control</div>
+    <a href="" onclick="_toggleComponent('dkpp'); return false;">toggle component</a>
+
+    
+    <div id="modalControl">cpv-control</div>
+
+    <script crossorigin src="dist/bundle.js"></script>
+    <script>
+
+        function extractDataLocal(classifierId) {
+            let el = document.getElementById(classifierId);
+            return !el.value ? [] : el.value.split(",");
+        }
+
+        function storeDataLocal(classifierId, values) {
+            let el = document.getElementById(classifierId);
+            const joined = !values.length ? "" : values.map(i => { return (typeof i == 'object' ? i.id : i) }).join(",");
+            el.value = joined;
+        }
+
+        function onChipsClickLocal(classifierId, chip) {
+            console.log('Clicked Chip', classifierId, chip);
+        }
+
+        function getClassifierInfoByCodesLocal(classifierId, codesArray) {
+            //detect url by classifierId
+            let urlCode;
+            switch (classifierId) {
+                case 'cpv': urlCode = 'cpv_id'; break;
+                case 'dkpp': urlCode = 'dkpp_id'; break;
+                case 'urtzed': urlCode = 'uktzed_id'; break;
+                case 'main': urlCode = 'main_id'; break;
+            }
+            const url = "http://127.0.0.1:10102/class/names?" + urlCode + "=" + codesArray.join(',') ;
+
+            return makeGetRequest(url)
+                .then(resp => {
+                    const res = JSON.parse(resp);
+                    return (!!res[classifierId] ? res[classifierId] : []);
+                });
+        }
+
+        function onComponentMountLocal( classifierId, reactComponent ){
+            let el = document.getElementById(classifierId);
+            el.style.display = 'none';
+        }
+        function onComponentUnmountLocal( classifierId ){
+            let el = document.getElementById(classifierId);
+            el.style.display = '';
+        }
+
+        /**
+         * Modal helpers
+         */
+        function loadTreeLevelLocal(controlId, parentId){
+            let urlCode = false;
+            switch( controlId ){
+                case 'cpv': urlCode = 'cpv'; break;
+                case 'dkpp': urlCode = 'dkpp'; break;
+                case 'urtzed': urlCode = 'uktzed'; break;
+                case 'main': urlCode = 'main'; break;
+                default: throw new Error('Unexpected controlId');
+            }
+            let url = "http://127.0.0.1:10102/class/tree/"+urlCode;
+            if( !!parentId ) url+='/'+parentId;
+            url += '?lang=ru';
+
+            const promise = makeGetRequest( url );
+
+            return promise.then(resp => {
+                return JSON.parse(resp);
+            });
+        }
+
+        function getSelectedPathsLocal(controlId, codesArray){
+            if(!codesArray.length) return [];
+
+            let urlCode;
+            switch( controlId ){
+                case 'cpv': urlCode = 'cpv'; break;
+                case 'dkpp': urlCode = 'dkpp'; break;
+                case 'urtzed': urlCode = 'uktzed'; break;
+                case 'main': urlCode = 'main'; break;
+            }
+            const url = "http://127.0.0.1:10102/class/"+urlCode+"/selected?ids="+codesArray.join(',');
+
+            const promise = makeGetRequest( url );
+
+            return promise.then(resp=>{
+                return JSON.parse(resp);
+            });
+        }
+
+        function initModal(classifierId){
+            classifierTool.initReactModal({
+                classifierId: classifierId,
+                containerId: 'modalControl',
+                title: _getTitleByClassifierId(classifierId),
+                extractData: extractDataLocal,
+                storeData: storeDataLocal,
+                loadTreeLevel:loadTreeLevelLocal,
+                getSelectedPaths:getSelectedPathsLocal,
+                onComponentMount: onComponentMountLocal,
+                // onComponentUnmount: onComponentUnmountLocal
+            });
+        }
+
+        function _getTitleByClassifierId(classifierId){
+            switch(classifierId){
+                case 'main': return 'Классификатор 25h8';
+                case 'cpv': return 'CPV';
+                case 'dkpp': return 'ДКПП';
+                case 'uktzed': return 'УКТЗЕД';
+            }
+            return classifierId;
+        }
+
+        function _toggleComponent(classifierId){
+            if( !classifierTool.isInited(classifierId) ){
+                classifierTool.initReactInput({
+                    inputId: classifierId,
+                    classifierId: classifierId,
+                    containerId: classifierId+'Control',
+                    extractData: extractDataLocal,
+                    storeData: storeDataLocal,
+                    onChipsClick: onChipsClickLocal,
+                    getClassifierInfoByCodes: getClassifierInfoByCodesLocal,
+                    onComponentMount: onComponentMountLocal,
+                    onComponentUnmount: onComponentUnmountLocal
+                });
+            } else {
+                classifierTool.removeReactInput(classifierId);
+            }
+        }
+
+        classifierTool.initReactInput({
+            inputId: 'cpv',
+            classifierId: 'cpv',
+            containerId: 'cpvControl',
+            extractData: extractDataLocal,
+            storeData: storeDataLocal,
+            onChipsClick: onChipsClickLocal,
+            getClassifierInfoByCodes: getClassifierInfoByCodesLocal,
+            onComponentMount: onComponentMountLocal,
+            onComponentUnmount: onComponentUnmountLocal
+        });
+
+        classifierTool.initReactInput({
+            inputId: 'main',
+            classifierId: 'main',
+            containerId: 'mainControl',
+            extractData: extractDataLocal,
+            storeData: storeDataLocal,
+            onChipsClick: onChipsClickLocal,
+            getClassifierInfoByCodes: getClassifierInfoByCodesLocal,
+            onComponentMount: onComponentMountLocal,
+            onComponentUnmount: onComponentUnmountLocal
+        });
+
+        classifierTool.initReactInput({
+            inputId: 'dkpp',
+            classifierId: 'dkpp',
+            containerId: 'dkppControl',
+            extractData: extractDataLocal,
+            storeData: storeDataLocal,
+            onChipsClick: onChipsClickLocal,
+            getClassifierInfoByCodes: getClassifierInfoByCodesLocal,
+            onComponentMount: onComponentMountLocal,
+            onComponentUnmount: onComponentUnmountLocal
+        });
+
+
+        function makeGetRequest(url, handler) {
+            return new Promise(function (resolve, reject) {
+                const xhr = new XMLHttpRequest();
+                xhr.open("GET", url, true);
+
+                xhr.onload = function () {
+                    if (this.status != 200) {
+                        reject(new Error('Failed load data! response status: ' + xhr.status));
+                    } else {
+                        // вывести результат
+                        resolve(this.responseText);
+                    }
+                }
+
+                xhr.onerror = function (e) {
+                    reject(new Error('Load data error!'));
+                }
+
+                xhr.send();
+            });
+        }
+
+    </script>
+
+</body>
+
+</html>
