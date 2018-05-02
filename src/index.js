@@ -8,7 +8,6 @@ import { ClassModal } from './class-modal';
 
 class ComponentControllerClass {
     constructor() {
-        
         this.linker = {
             dom: {},
             react: {}

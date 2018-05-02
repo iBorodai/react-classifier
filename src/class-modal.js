@@ -1,5 +1,6 @@
 import React from "react";
 import PropTypes from 'prop-types';
+import SearchInput, {createFilter} from 'react-search-input'
 
 class TreeNode extends React.Component {
 
@@ -73,9 +74,10 @@ class ClassModal extends React.Component {
         this.triggerItemOpen = this.triggerItemOpen.bind(this);
         this.triggerItemSelected = this.triggerItemSelected.bind(this);
         this.expandSelected = this.expandSelected.bind(this);
+        this.searchUpdated = this.searchUpdated.bind(this)
 
         // hide base input
-        this.state = { values: [], tree: {} };
+        this.state = { values: [], tree: {}, searchTerm: '' };
     }
 
     // componentDidUpdate(prevProps, prevState) {
@@ -222,6 +224,11 @@ class ClassModal extends React.Component {
         this.props.onStoreData(this.props.id);
     }
 
+    searchUpdated (term) {
+        debugger;
+        this.setState({searchTerm: term})
+    }
+
     render() {
 
         const nodes = Object.keys(this.state.tree).map(
@@ -242,6 +249,7 @@ class ClassModal extends React.Component {
                     {title}
                     <span className="cct-button" id="cct-expand-selected" onClick={this.expandSelected}>expand selected</span>
                     <span className="cct-button" id="cct-close" onClick={this.props.close}>close</span>
+                    <SearchInput className="search-input" onChange={this.searchUpdated} />
                 </header>
                 <div id="cct-tree-wrapper">
                     {nodes}

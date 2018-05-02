@@ -13,7 +13,12 @@
   "author": "",
   "license": "ISC",
   "babel": {
-    "presets": [ "env", "react", "es2015",  "stage-2" ]
+    "presets": [
+      "env",
+      "react",
+      "es2015",
+      "stage-2"
+    ]
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
@@ -30,5 +35,13 @@
     "webpack": "^4.1.1",
     "webpack-cli": "^2.0.12",
     "webpack-dev-server": "^3.1.1"
+  },
+  "dependencies": {
+    "assert": "^1.4.1",
+    "react-redux": "^5.0.7",
+    "react-search-input": "^0.11.3",
+    "redux": "^4.0.0",
+    "redux-thunk": "^2.2.0",
+    "seamless-immutable": "^7.1.3"
   }
 }

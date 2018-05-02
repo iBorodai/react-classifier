@@ -13,7 +13,7 @@ module.exports = {
         sourceMapFilename: '[file].map'
     },
     devServer: {
-        contentBase: './dist'
+        contentBase: './'
     },
     module: {
         rules: [
