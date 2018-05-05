@@ -18,3 +18,7 @@
 .cct-item-childs{
     padding-left:40px;
 }
+
+.cct-item-loading{
+    color:red;
+}

@@ -59,25 +59,22 @@ class ClassControl extends React.Component {
 
         if(!valueCodes.length) return;
         
-        if(!this.props.getClassifierInfoByCodes){    
-            debugger;
-            this.props.getClassifierInfoByCodes.then(r=>{
-                debugger;
-            })
+        if(!this.props.getClassifierInfoByCodes){
             const values = valueCodes.map(i=>{return {id:i}});
             return this.setState({ values });
         } 
 
-        try{
-            let values = await this.props.getClassifierInfoByCodes( this.props.id, valueCodes );
+        this.props.getClassifierInfoByCodes.call( this, this.props.id, valueCodes, (err, values) => {
+            if(!!err){
+                const values = valueCodes.map(i=>{return {id:i}});
+                return this.setState({ values });
+            }
             // на случай если метод не дает ошибку, а возвращаем пустой массив
-            if(!values.length && !!valueCodes.length) values = valueCodes.map(i=>{return {id:i}});
+            if(!values.length && !!valueCodes.length) 
+                values = valueCodes.map(i=>{return {id:i}});
             this.setState({ values });
-        } catch( e ){
-            console.error(e);
-            const values = valueCodes.map(i=>{return {id:i}});
-            return this.setState({ values });
-        }
+        });
+        
         return;
     }
 

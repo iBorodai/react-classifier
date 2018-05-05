@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from 'prop-types';
-import SearchInput, {createFilter} from 'react-search-input'
+import SearchInput, { createFilter } from 'react-search-input'
 
 class TreeNode extends React.Component {
 
@@ -19,14 +19,16 @@ class TreeNode extends React.Component {
 
     render() {
         const iswithChilds = this.props.item.children && parseInt(this.props.item.children) > 0;
+
         const classAdd = 'cct-tree-node-item' +
             (!!iswithChilds ? ' cct-item-folder' : '') +
             (!!this.props.item.isOpen ? ' cct-item-open' : '') +
-            (!!this.props.item.isSelected ? ' cct-item-selected' : '')
+            (!!this.props.item.isSelected ? ' cct-item-selected' : '') +
+            (!!this.props.item.isLoading ? ' cct-item-loading' : '')
             ;
 
         const arrButton = iswithChilds
-            ? <span className="cct-item-arr" onClick={this.triggerOpen}> {this.props.item.isOpen ? 'v' : '>'} </span>
+            ? <span className="cct-item-arr" onClick={this.triggerOpen}> {(!!this.props.item.isOpen || this.props.item.isLoading) ? 'v' : '>'} </span>
             : <span className="cct-item-space"> </span>
             ;
 
@@ -34,6 +36,9 @@ class TreeNode extends React.Component {
             ? <span className="cct-item-name" onClick={this.triggerOpen}> {this.props.item.name} </span>
             : <span className="cct-item-name"> {this.props.item.name} </span>
             ;
+
+        const loadingMarker = ( !!this.props.item.isLoading ) ? 
+            <i className="cct-item-loading"> ...loading... </i> : null;
 
         const childsArr = Object.keys(this.props.item.childs).map(
             key => <TreeNode
@@ -52,6 +57,7 @@ class TreeNode extends React.Component {
                 <span className="cct-item-selected" onClick={this.triggerSelected}> {this.props.item.isSelected ? '[V]' : '[ ]'} </span>
                 <span className="cct-item-code"> {this.props.item.id} </span>
                 {nameBlock}
+                {loadingMarker}
                 {childs}
             </div>
         );
@@ -74,17 +80,19 @@ class ClassModal extends React.Component {
         this.triggerItemOpen = this.triggerItemOpen.bind(this);
         this.triggerItemSelected = this.triggerItemSelected.bind(this);
         this.expandSelected = this.expandSelected.bind(this);
-        this.searchUpdated = this.searchUpdated.bind(this)
+        this.searchUpdated = this.searchUpdated.bind(this);
+        this._loadLevel = this._loadLevel.bind(this);
 
         // hide base input
-        this.state = { values: [], tree: {}, searchTerm: '' };
+        this.state = { values: [], tree: {}, searchTerm: '', isLoading: false };
+
     }
 
     // componentDidUpdate(prevProps, prevState) {
     //     if (this.state.values != prevState.values) this.storeData();
     //     const isChangedSelected = (this.state.values.length !== prevState.values.length);
     //     console.log( 'isChangedSelected', isChangedSelected );
-    //     debugger;
+
 
     // }
 
@@ -117,7 +125,10 @@ class ClassModal extends React.Component {
         if (!!curPlace.isOpen) {
             curPlace.childs = {}
         } else {
+            curPlace.isLoading = true;
+            this.setState({ tree });
             const subTree = await this._loadLevel(code);
+            curPlace.isLoading = false;
             curPlace.childs = subTree;
         }
 
@@ -148,39 +159,56 @@ class ClassModal extends React.Component {
             this.props.onTriggerItemSelection(pathStr, curPlace);
     }
 
-    async _loadLevel(code) {
-        if (!code) code = 0;
+    _loadLevel(code) {
+        return new Promise((resolve, reject) => {
+            if (!code) code = '0';
 
-        const treeBase = await this.props.loadTreeLevel(this.props.id, code);
-        const tree = treeBase.reduce((prev, item) => {
-            prev[item.id] = Object.assign({ childs: {} }, item);
-            return prev;
-        }, {});
-        return tree;
+            this.props.loadTreeLevel.call(this, this.props.id, code, (err, treeBase) => {
+
+                if (!!err) return reject(err);
+                resolve(
+                    treeBase.reduce((prev, item) => {
+                        prev[item.id] = Object.assign({ childs: {} }, item);
+                        return prev;
+                    }, {})
+                );
+            });
+
+        });
+
+        // const treeBase = await this.props.loadTreeLevel(this.props.id, code);
+        // const tree = treeBase.reduce((prev, item) => {
+        //     prev[item.id] = Object.assign({ childs: {} }, item);
+        //     return prev;
+        // }, {});
+        // return tree;
     }
 
     async init() {
+        this.setState({ isLoading: true });
+
         let tree = await this._loadLevel();
 
         const values = await this.props.extractData(this.props.id);
 
+        this.setState({ values, tree, isLoading: false });
+
         if (!!this.props.getSelectedPaths) {
-            const paths = await this.props.getSelectedPaths(this.props.id, values);
 
-            if (!Array.isArray(paths)) {
-                console.error('Expected getSelectedPaths method return array of arrays of path for selected items');
-                return this.setState({ values, tree });
-            }
+            this.props.getSelectedPaths.call(this, this.props.id, values, async (err, paths) => {
 
-            try {
-                tree = await this.markSelectedPaths(tree, values, paths);
-            } catch (e) {
-                // debugger;
-                this.setState({ values, tree });
-            }
+                if (!!err) return;
+
+                if (!Array.isArray(paths)) {
+                    console.error('Expected getSelectedPaths method return array of arrays of path for selected items');
+                    return;
+                }
+
+                const tree = await this.markSelectedPaths(this.state.tree, this.state.values, paths);
+
+                this.setState({ tree });
+            });
         }
-
-        this.setState({ values, tree });
     }
 
     async expandSelected() {
@@ -188,24 +216,28 @@ class ClassModal extends React.Component {
         const paths = await this.props.getSelectedPaths(this.props.id, this.state.values);
         if (!Array.isArray(paths)) throw new Error('Expected getSelectedPaths method return array of arrays of path for selected items');
         let tree = Object.assign({}, this.state.tree);
+
         tree = await this.markSelectedPaths(tree, this.state.values, paths);
         this.setState({ tree });
     }
 
-    async markSelectedPaths(tree, values, paths) {
+    async markSelectedPaths(tree, values, pathArr) {
 
-        for (let i = 0; i < paths.length; i++) {
-            const path = paths[i];
+        for (let i = 0; i < pathArr.length; i++) {
+            const path = pathArr[i];
 
-            // debugger;
             tree[path[0]].isOpen = true;
             let curPlace = tree[path[0]];
 
             for (let i = 1; i < path.length; i++) {
+
                 if (Object.keys(curPlace.childs).length === 0) {
                     // load tree level
+                    curPlace.isLoading = true; this.setState({tree});
                     curPlace.childs = await this._loadLevel(curPlace.id);
+                    curPlace.isLoading = false; 
                 }
+
                 if (!curPlace.childs[path[i]]) throw new Error('Path collision!'); // EXCEPTION!
                 curPlace.isOpen = true;
 
@@ -214,7 +246,7 @@ class ClassModal extends React.Component {
 
             curPlace.isSelected = true;
 
-        }
+        };
 
         return tree;
     }
@@ -224,9 +256,10 @@ class ClassModal extends React.Component {
         this.props.onStoreData(this.props.id);
     }
 
-    searchUpdated (term) {
+    searchUpdated(term) {
+
+        this.setState({ searchTerm: term });
         debugger;
-        this.setState({searchTerm: term})
     }
 
     render() {
@@ -268,6 +301,7 @@ ClassModal.propTypes = {
     title: PropTypes.string,
     getSelectedPaths: PropTypes.func,
     onTriggerItemSelection: PropTypes.func,
+    onSearch: PropTypes.func,
     close: PropTypes.func,
 }
 

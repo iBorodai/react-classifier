@@ -88,7 +88,10 @@ class ComponentControllerClass {
                 // onComponentMount={params.onComponentMount}
                 // onComponentUnmount={params.onComponentUnmount}
                 onTriggerItemSelection={(pathStr, item)=>{
-                    // debugger;
+                    
+                }}
+                onSeach = {(term)=>{
+
                 }}
                 close={this.removeReactModal}
                 ref={(reactComponent) => { this.linker.react.modal = reactComponent }}
@@ -125,11 +128,12 @@ const ReactInputParamTypes = {
 const ReactModalParamTypes = {
     classifierId: PropTypes.string.isRequired,
     containerId: PropTypes.string.isRequired,
-    relatedComponentId: PropTypes.string.isRequired,
+    // relatedComponentId: PropTypes.string.isRequired,
     storeData: PropTypes.func.isRequired,
     extractData: PropTypes.func,
     loadTreeLevel: PropTypes.func,
     getSelectedPaths: PropTypes.func,
+    getSearchResult: PropTypes.func,
 }
 
 const single = new ComponentControllerClass;
