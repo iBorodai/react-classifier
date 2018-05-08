@@ -3,10 +3,6 @@
 import React from "react";
 import PropTypes from 'prop-types';
 
-/*****
- * Input chips components and functions
- ******/
-
 class Chips extends React.Component {
     render() {
         const name = !!this.props.name ? (

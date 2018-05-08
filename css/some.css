@@ -1,18 +1,27 @@
 .cct-chips-item{
     display: inline-block;
     margin-right: 10px;
-    padding: 5px 10px 5px 5px;
+    padding: 0;
     border-radius: 4px;
     background: #e4e4e4;
     overflow: hidden;
     font-size: 12px;
 }
+
 .cct-chips-code{
     display: inline-block;
     background: #bbb;
     height: 100%;
-    padding: 5px 10px;
-    margin: -5px 5px -5px -5px;
+    padding: 2px 5px;
+}
+.cct-chips-name{
+    padding: 0 5px;
+    max-width: 100px;
+    height: 1em;
+    text-overflow: ellipsis;
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .cct-item-childs{

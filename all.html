@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Classifier-webpack-component</title>
+    <link rel="stylesheet" media="all" href="css/some.css">
+</head>
+
+<body>
+
+    <label for="" style="display:block;">CPV</label>
+    <input type="text" id="cpv" name="Model[cpv]" value="03100000-2,03116000-7,98500000-8,65410000-0" style="width:95%; font-size:14px; padding:5px;"
+    />
+
+    <button onclick="initModal('cpv'); return false;">Select classes</button>
+    <div id="cpvControl">cpv-control</div>
+
+    <hr>
+
+    <label for="" style="display:block;">MAIN</label>
+    <button onclick="initModal('main'); return false;">Select classes</button>
+    <input type="text" id="main" name="Model[main]" value="1" style="width:95%; font-size:14px; padding:5px;" />
+    <div id="mainControl">main-control</div>
+
+    <hr>
+
+    <label for="" style="display:block;">DKPP</label>
+    <button onclick="initModal('dkpp'); return false;">Select classes</button>
+    <input type="text" id="dkpp" name="Model[dkpp]" value="11.04" style="width:95%; font-size:14px; padding:5px;" />
+    <div id="dkppControl">dkpp-control</div>
+    <a href="" onclick="_toggleComponent('dkpp'); return false;">toggle component</a>
+
+
+    <div id="modalControl">cpv-control</div>
+
+    <script crossorigin src="dist/bundle.js"></script>
+    <script>
+
+        function extractDataLocalSync(classifierId) {
+            var el = document.getElementById(classifierId);
+            return !el.value ? [] : el.value.split(",");
+        }
+
+        function storeDataLocalSync(classifierId, values) {
+            var el = document.getElementById(classifierId);
+            var joined = !values.length ? "" : values.map(i => { return (typeof i == 'object' ? i.id : i) }).join(",");
+            el.value = joined;
+        }
+
+        function onChipsClickLocal(classifierId, chip) {
+            console.log('Clicked Chip', classifierId, chip);
+        }
+
+        // 
+        function getClassifierInfoByCodesLocal(classifierId, codesArray, callback) {
+            //detect url by classifierId
+            var urlCode = _getVarById(classifierId);
+
+            var url = "http://127.0.0.1:10102/class/names?" + urlCode + "=" + codesArray.join(',');
+
+            return makeGetRequest(url, function (err, resp) {
+
+                if (!!err) return callback.call(this, err);
+
+                try {
+                    var res = JSON.parse(resp);
+                    return callback.call(this, null, (!!res[classifierId] ? res[classifierId] : []));
+                } catch (err) {
+                    return callback.call(this, err);
+                }
+            });
+        }
+
+        function onComponentMountLocal(classifierId, reactComponent) {
+            var el = document.getElementById(classifierId);
+            el.style.display = 'none';
+        }
+
+        function onComponentUnmountLocal(classifierId) {
+            var el = document.getElementById(classifierId);
+            el.style.display = '';
+        }
+
+        /**
+         * Modal helpers
+         */
+        function loadTreeLevelLocal(controlId, parentId, callback) {
+            
+            var urlCode = _getCodeById(controlId);
+
+            var url = "http://127.0.0.1:10102/class/tree/" + urlCode;
+            if (!!parentId) url += '/' + parentId;
+            url += '?lang=ru';
+
+            var promise = makeGetRequest(url, function (err, resp) {
+                if (!!err) return callback.call(this, err);
+                try {
+                    return callback.call(this, null, JSON.parse(resp));
+                } catch (err) {
+                    return callback.call(this, err);
+                }
+            });
+
+            // return promise.then(resp => {
+            //     return JSON.parse(resp);
+            // });
+        }
+
+        function getSelectedPathsLocal(controlId, codesArray, callback) {
+            if (!codesArray.length) return [];
+
+            var urlCode = _getCodeById(controlId);
+
+            var url = "http://127.0.0.1:10102/class/" + urlCode + "/selected?ids=" + codesArray.join(',');
+
+            var promise = makeGetRequest(url, function (err, resp) {
+                if (!!err) return callback.call(this, err);
+                try {
+                    return callback.call(this, null, JSON.parse(resp));
+                } catch (err) {
+                    return callback.call(this, err);
+                }
+            });
+
+            // return promise.then(resp=>{
+            //     return JSON.parse(resp);
+            // });
+        }
+
+        function getSearchResultLocal(controlId, term, callback) {
+            if (!codesArray.length) return [];
+
+            var urlCode = _getCodeById(controlId);
+
+            var url = "http://127.0.0.1:10102/class/" + urlCode + "/selected?ids=" + codesArray.join(',');
+
+            var promise = makeGetRequest(url, function (err, resp) {
+                if (!!err) return callback.call(this, err);
+                try {
+                    return callback.call(this, null, JSON.parse(resp));
+                } catch (err) {
+                    return callback.call(this, err);
+                }
+            });
+
+        }
+
+        function initModal(classifierId) {
+            classifierTool.initReactModal({
+                classifierId: classifierId,
+                reactContainerSelector: 'modalControl',
+                title: _getTitleByClassifierId(classifierId),
+                extractData: extractDataLocalSync,
+                storeData: storeDataLocalSync,
+                loadTreeLevel: loadTreeLevelLocal,
+                getSelectedPaths: getSelectedPathsLocal,
+                getSearchResult: getSearchResultLocal,
+                onComponentMount: onComponentMountLocal,
+                // onComponentUnmount: onComponentUnmountLocal
+            });
+        }
+
+        function _getTitleByClassifierId(classifierId) {
+            switch (classifierId) {
+                case 'main': return 'Классификатор 25h8';
+                case 'cpv': return 'CPV';
+                case 'dkpp': return 'ДКПП';
+                case 'uktzed': return 'УКТЗЕД';
+            }
+            return classifierId;
+        }
+
+        function _toggleComponent(classifierId) {
+            if (!classifierTool.isInited(classifierId)) {
+                classifierTool.initReactInput({
+                    inputId: classifierId,
+                    classifierId: classifierId,
+                    reactContainerSelector: classifierId + 'Control',
+                    extractData: extractDataLocalSync,
+                    storeData: storeDataLocalSync,
+                    onChipsClick: onChipsClickLocal,
+                    getClassifierInfoByCodes: getClassifierInfoByCodesLocal,
+                    onComponentMount: onComponentMountLocal,
+                    onComponentUnmount: onComponentUnmountLocal
+                });
+            } else {
+                classifierTool.removeReactInput(classifierId);
+            }
+        }
+
+        classifierTool.initReactInput({
+            inputId: 'cpv',
+            classifierId: 'cpv',
+            reactContainerSelector: 'cpvControl',
+            extractData: extractDataLocalSync,
+            storeData: storeDataLocalSync,
+            onChipsClick: onChipsClickLocal,
+            getClassifierInfoByCodes: getClassifierInfoByCodesLocal,
+            onComponentMount: onComponentMountLocal,
+            onComponentUnmount: onComponentUnmountLocal
+        });
+
+        classifierTool.initReactInput({
+            inputId: 'main',
+            classifierId: 'main',
+            reactContainerSelector: 'mainControl',
+            extractData: extractDataLocalSync,
+            storeData: storeDataLocalSync,
+            onChipsClick: onChipsClickLocal,
+            getClassifierInfoByCodes: getClassifierInfoByCodesLocal,
+            onComponentMount: onComponentMountLocal,
+            onComponentUnmount: onComponentUnmountLocal
+        });
+
+        classifierTool.initReactInput({
+            inputId: 'dkpp',
+            classifierId: 'dkpp',
+            reactContainerSelector: 'dkppControl',
+            extractData: extractDataLocalSync,
+            storeData: storeDataLocalSync,
+            onChipsClick: onChipsClickLocal,
+            getClassifierInfoByCodes: getClassifierInfoByCodesLocal,
+            onComponentMount: onComponentMountLocal,
+            onComponentUnmount: onComponentUnmountLocal
+        });
+
+
+        function makeGetRequest(url, handler) {
+            // return new Promise(function (resolve, reject) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", url, true);
+
+                xhr.onload = function () {
+                    if (this.status != 200) {
+                        handler(new Error('Failed load data! response status: ' + xhr.status));
+                        // reject(new Error('Failed load data! response status: ' + xhr.status));
+                    } else {
+                        handler(null, this.responseText);
+                        // вывести результат
+                        // resolve(this.responseText);
+                    }
+                }
+
+                xhr.onerror = function (e) {
+                    handler(new Error('Load data error!'));
+                    // reject(new Error('Load data error! :'.e.message));
+                }
+
+                xhr.send();
+            // });
+        }
+
+        function _getCodeById(classifierId) {
+
+            switch (classifierId) {
+                case 'cpv': return 'cpv'; break;
+                case 'dkpp': return 'dkpp'; break;
+                case 'urtzed': return 'uktzed'; break;
+                case 'main': return 'main'; break;
+                default: throw new Error('Unexpected Classifier id: "' + classifierId + '"');
+            }
+        }
+
+        function _getVarById(classifierId){
+            return _getCodeById(classifierId)+'_id';
+        }
+
+    </script>
+
+</body>
+
+</html>

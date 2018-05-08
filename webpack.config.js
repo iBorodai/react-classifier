@@ -6,7 +6,7 @@ module.exports = {
     ],
     output: {
         path: __dirname + '/dist',
-        publicPath: '/',
+        publicPath: '/dist',
         filename: 'bundle.js',
         libraryTarget: 'var',
         library: 'classifierTool',
@@ -18,13 +18,16 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.js$/,
+                test: /\.(js|jsx)$/,
                 exclude: /node_modules/,
                 use: {
                     loader: "babel-loader"
                 }
             }
         ]
+    },
+    resolve: {
+        extensions: ['*', '.js', '.jsx']
     },
     devtool: 'source-map',
     // plugins: [
