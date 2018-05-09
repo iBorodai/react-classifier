@@ -1,36 +1,33 @@
-import React from 'react'
-import { render } from 'react-dom'
-import { Provider } from 'react-redux'
-import store from './store'
-import Classifier from './containers/classifier'
+import {tools} from './tools';
 
-render(
-    <Provider store={store}>
-        <Classifier 
-            classifierId="cpv" 
-            id="123"
-            extractItems={extractItems}
-            changeHandler={changeHandler}
-            loadnamesByCodes={false}
-            items={[]}
-        />
-    </Provider>,
-    document.querySelector('#app')
-)
-
-function changeHandler(data, prev){
-    var res = [];
-    for( var i=0; i<data.length; i++ ){
-        res.push(data[i].id);
-    }
-    document.getElementById('cpv-input').value = res.join();
+export function initClassifier( params ){
+    return tools.initClassifier( params );
 }
 
-function extractItems(next){
-    var v = document.getElementById('cpv-input').value.split(',');
-    var res = [];
-    for( var i=0; i<v.length; i++ ){
-        res.push({id: v[i]});
-    }
-    next(null, res);
+export function isInited( selector ){
+    return tools.isInited( selector );
+}
+
+export function requestGet( url, handler ){
+    return new Promise(function (resolve, reject) {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", url, true);
+
+        xhr.onload = function () {
+            if (this.status != 200) {
+                if(!!handler) return handler(new Error('Failed load data! response status: ' + xhr.status));
+                reject(new Error('Failed load data! response status: ' + xhr.status));
+            } else {
+                if(!!handler) return handler(null, this.responseText);
+                resolve(this.responseText);
+            }
+        }
+
+        xhr.onerror = function (e) {
+            if(!!handler) return handler(new Error('Load data error!'));
+            reject(new Error('Load data error! :'.e.message));
+        }
+
+        xhr.send();
+    });
 }

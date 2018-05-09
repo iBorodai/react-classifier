@@ -1,20 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width,initial-scale=1">
-        <title>Classifier-webpack-component</title>
-        <link rel="stylesheet" media="all" href="css/some.css">
-    </head>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Classifier-webpack-component</title>
+    <link rel="stylesheet" media="all" href="css/some.css">
+</head>
 
-    <body>
+<body>
 
-        <input type="text" id="cpv-input" name="Model[cpv]" value="03100000-2,03116000-7,98500000-8,65410000-0"/>
-        <div id="app">APP</div>
+    <input type="text" id="cpv-input" name="Model[cpv]" value="03100000-2,03116000-7,98500000-8,65410000-0" style="width:100%; padding: 5px;"
+    />
+    <div id="cpv">CPV-classifier</div>
+    <a href="#" id="reload">reload</a>
 
-        <script crossorigin src="dist/bundle.js"></script>    
+    <script crossorigin src="dist/bundle.js"></script>
+    <script src="index.js"></script>
+    <script>            
+        classifierTool.initClassifier({
+            classifierId: 'cpv',
+            reactContainerSelector: '#cpv',
+            extractItems: function (next) {
+                var v = document.getElementById('cpv-input').value.split(',');
+                var res = [];
+                for (var i = 0; i < v.length; i++) {
+                    res.push({ id: v[i] });
+                }
+                next(null, res);
+            },
+            changeHandler: function (data, prev) {
+                var res = [];
+                for (var i = 0; i < data.length; i++) {
+                    res.push(data[i].id);
+                }
+                document.getElementById('cpv-input').value = res.join();
+            },
+            loadNamesByCodes: function (codesArray, callback) {
+                var classifierId = 'cpv';
+                var urlCode = classifierId + '_id';
+                var url = "http://127.0.0.1:10102/class/names?" + urlCode + "=" + codesArray.join(',');
 
-    </body>
+                return classifierTool.requestGet(url, function (err, resp) {
+
+                    if (!!err) return callback.call(this, err);
+
+                    try {
+                        var res = JSON.parse(resp);
+                        return callback.call(this, null, (!!res[classifierId] ? res[classifierId] : []));
+                    } catch (err) {
+                        return callback.call(this, err);
+                    }
+                });
+            },
+            onInit: function (context) {
+                document.getElementById('reload').onclick = function (e) {
+                    context.reloadItems();
+                    return false;
+                }
+            }
+        });
+    </script>
+</body>
 
 </html>

@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "webpack-dev-server --config ./webpack.config.js --mode development",
+    "start-prod": "webpack-dev-server --config ./webpack.config.js --mode production",
     "dev": "webpack --mode development",
     "build": "webpack --mode production",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -39,6 +40,7 @@
   },
   "dependencies": {
     "assert": "^1.4.1",
+    "lodash": "^4.17.10",
     "react-redux": "^5.0.7",
     "react-search-input": "^0.11.3",
     "redux": "^4.0.0",
