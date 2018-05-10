@@ -14,45 +14,20 @@
     />
     <div id="cpv">CPV-classifier</div>
     <a href="#" id="reload">reload</a>
+    <hr>
+    <input type="text" id="main-input" name="Model[main]" value="1.1.2,1.3.1" style="width:100%; padding: 5px;" />
+    <div id="main">MAIN-classifier</div>
 
     <script crossorigin src="dist/bundle.js"></script>
     <script src="index.js"></script>
     <script>            
+        // init CPV
         classifierTool.initClassifier({
             classifierId: 'cpv',
             reactContainerSelector: '#cpv',
-            extractItems: function (next) {
-                var v = document.getElementById('cpv-input').value.split(',');
-                var res = [];
-                for (var i = 0; i < v.length; i++) {
-                    res.push({ id: v[i] });
-                }
-                next(null, res);
-            },
-            changeHandler: function (data, prev) {
-                var res = [];
-                for (var i = 0; i < data.length; i++) {
-                    res.push(data[i].id);
-                }
-                document.getElementById('cpv-input').value = res.join();
-            },
-            loadNamesByCodes: function (codesArray, callback) {
-                var classifierId = 'cpv';
-                var urlCode = classifierId + '_id';
-                var url = "http://127.0.0.1:10102/class/names?" + urlCode + "=" + codesArray.join(',');
-
-                return classifierTool.requestGet(url, function (err, resp) {
-
-                    if (!!err) return callback.call(this, err);
-
-                    try {
-                        var res = JSON.parse(resp);
-                        return callback.call(this, null, (!!res[classifierId] ? res[classifierId] : []));
-                    } catch (err) {
-                        return callback.call(this, err);
-                    }
-                });
-            },
+            extractItems: function (next) { getDataFromField('cpv', next) },
+            changeHandler: function (data, prev) { saveDataToField('cpv', data, prev) },
+            loadNamesByCodes: function (codesArray, callback) { loadCodeNames('cpv', codesArray, callback) },
             onInit: function (context) {
                 document.getElementById('reload').onclick = function (e) {
                     context.reloadItems();
@@ -60,6 +35,51 @@
                 }
             }
         });
+        // init MAIN
+        classifierTool.initClassifier({
+            classifierId: 'main',
+            reactContainerSelector: '#main',
+            extractItems: function (next) { getDataFromField('main', next) },
+            changeHandler: function (data, prev) { saveDataToField('main', data, prev) },
+            loadNamesByCodes: function (codesArray, callback) { loadCodeNames('main', codesArray, callback) },
+        });
+
+        // COMMON functions
+        function getDataFromField(id, next) {
+            var v = document.getElementById(id + '-input').value.split(',');
+            var res = [];
+            for (var i = 0; i < v.length; i++) {
+                res.push({ id: v[i] });
+            }
+            next(null, res);
+        }
+
+        function saveDataToField(saveid, data) {
+            var res = [];
+            for (var i = 0; i < data.length; i++) {
+                res.push(data[i].id);
+            }
+            document.getElementById(saveid + '-input').value = res.join();
+        }
+
+        function loadCodeNames(id, codesArray, callback) {
+            var classifierId = id;
+            var urlCode = classifierId + '_id';
+            var url = "http://127.0.0.1:10102/class/names?" + urlCode + "=" + codesArray.join(',');
+
+            return classifierTool.requestGet(url, function (err, resp) {
+
+                if (!!err) return callback.call(this, err);
+
+                try {
+                    var res = JSON.parse(resp);
+                    return callback.call(this, null, (!!res[classifierId] ? res[classifierId] : []));
+                } catch (err) {
+                    return callback.call(this, err);
+                }
+            });
+        }
+
     </script>
 </body>
 

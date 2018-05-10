@@ -2,29 +2,30 @@ import React from 'react'
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 import ClassifierComponent from '../components/classifier'
-import { genActions } from '../reducers/classifier';
+import { genActions } from '../reducers/classifierReducer';
 
 export default (params) => {
 
     const ACTIONS = genActions(params.clientFunctions);
 
     class ClassifierContainer extends React.Component {
-        constructor(props){
+        constructor(props) {
             super(props);
+            this.clientFunctions = params.clientFunctions;
             this.reloadItems = this.reloadItems.bind(this);
         }
 
         componentDidMount() {
             this.props.actExtractItems();
-            if( !!params.clientFunctions.onInit )
+            if (!!params.clientFunctions.onInit)
                 params.clientFunctions.onInit(this);
         }
 
         componentDidUpdate(prevProps, prevState) {
             console.log(this.props);
-        }        
+        }
 
-        reloadItems(){
+        reloadItems() {
             this.props.actExtractItems();
         }
 
@@ -39,8 +40,8 @@ export default (params) => {
 
     const mapStateToProps = function (state) {
         return {
-            items: state.classifier.items,
-            loading: state.classifier.loading
+            items: (!!state.classifierReducer.items ? state.classifierReducer.items : []),
+            loading: state.classifierReducer.loading
         };
     };
 

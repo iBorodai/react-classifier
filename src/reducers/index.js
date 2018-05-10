@@ -1,12 +1,12 @@
 import { combineReducers } from 'redux';
 
 // REDUCERS
-import classifier from './classifier';
+import classifierReducer from './classifierReducer';
 import errorMessage from './errorMessage';
 
 const rootReducer = combineReducers(
     {
-        classifier,
+        classifierReducer,
         errorMessage
     }
 );

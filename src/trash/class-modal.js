@@ -259,7 +259,7 @@ class ClassModal extends React.Component {
     searchUpdated(term) {
 
         this.setState({ searchTerm: term });
-        debugger;
+
     }
 
     render() {

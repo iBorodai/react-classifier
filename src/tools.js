@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import React from 'react'
 import { render } from 'react-dom'
 import { Provider } from 'react-redux'
-import store from './store'
+import storeCreator from './store'
 import ClassifierConstructor from './containers/classifierContainer'
 import { propTypesClassifier } from './types/propTypesClassifier';
 
@@ -49,7 +49,7 @@ class ToolsClass {
         });
 
         render(
-            <Provider store={store}>
+            <Provider store={storeCreator()}>
                 <ClassifierContainer
                     ref={(reactComponent) => {
                         // console.log(reactComponent);
